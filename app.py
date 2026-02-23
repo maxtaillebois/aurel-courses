@@ -135,7 +135,7 @@ def build_final_list(recipe_items_by_rayon, free_items_by_rayon):
         "CHARCUTERIE", "TRAITEUR", "POISSONNERIE", "BOUCHERIE",
         "SURGELÉS", "FROMAGES", "YAOURTS", "PRODUITS LAITIERS",
         "ÉPICERIE SALÉE", "CUISINE DU MONDE", "ÉPICERIE SUCRÉE",
-        "BOISSONS", "NOURRITURE BÉBÉ", "HYGIÈNE & DIVERS",
+        "BOISSONS", "HYGIÈNE & DIVERS",
     ]
 
     final = {}
