@@ -460,9 +460,28 @@ with tab_produits:
                         )
                 with col_del:
                     if st.button("🗑️", key=del_key):
-                        rayon["articles"].remove(article)
-                        save_catalogue(catalogue)
-                        st.rerun()
+                        st.session_state["confirm_delete_product"] = f"{rayon['nom']}||{article}"
+
+            # Confirmation de suppression (affiché sous le produit concerné)
+            confirm = st.session_state.get("confirm_delete_product", "")
+            if confirm:
+                confirm_rayon, confirm_article = confirm.split("||", 1)
+                if confirm_rayon == rayon["nom"]:
+                    st.warning(f"⚠️ Supprimer « {confirm_article} » de {confirm_rayon} ?")
+                    col_yes, col_no = st.columns(2)
+                    with col_yes:
+                        if st.button("Oui, supprimer", key=f"confirm_yes_{confirm_article}"):
+                            for r in catalogue:
+                                if r["nom"] == confirm_rayon and confirm_article in r["articles"]:
+                                    r["articles"].remove(confirm_article)
+                                    save_catalogue(catalogue)
+                                    break
+                            st.session_state["confirm_delete_product"] = ""
+                            st.rerun()
+                    with col_no:
+                        if st.button("Annuler", key=f"confirm_no_{confirm_article}"):
+                            st.session_state["confirm_delete_product"] = ""
+                            st.rerun()
 
 # =====================
 # ONGLET 3 : MON STOCK
