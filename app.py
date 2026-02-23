@@ -407,6 +407,24 @@ with tab_recettes:
 with tab_produits:
     st.header("Ajoutez des articles par rayon")
 
+    with st.expander("➕ Ajouter un nouveau produit"):
+        rayon_names_produits = [r["nom"] for r in catalogue]
+        with st.form("add_product_form", clear_on_submit=True):
+            col_nom, col_rayon = st.columns([3, 2])
+            with col_nom:
+                new_product_name = st.text_input("Nom du produit", placeholder="Ex : Beurre doux")
+            with col_rayon:
+                new_product_rayon = st.selectbox("Rayon", options=rayon_names_produits)
+            add_product_btn = st.form_submit_button("➕ Ajouter")
+
+            if add_product_btn and new_product_name.strip():
+                if add_ingredient_to_catalogue(catalogue, new_product_name.strip(), new_product_rayon):
+                    save_catalogue(catalogue)
+                    st.success(f"✅ « {new_product_name.strip()} » ajouté dans {new_product_rayon}")
+                    st.rerun()
+                else:
+                    st.warning(f"« {new_product_name.strip()} » existe déjà dans {new_product_rayon}")
+
     search_produits = st.text_input(
         "🔍 Rechercher un produit", key="search_produits",
         placeholder="Ex : yaourt, tomate...",
@@ -426,8 +444,9 @@ with tab_produits:
             for j, article in matching:
                 cat_key = f"cat_{rayon['nom']}_{j}"
                 qty_key = f"qty_{rayon['nom']}_{j}"
+                del_key = f"del_{rayon['nom']}_{article}"
 
-                col_check, col_qty = st.columns([3, 1])
+                col_check, col_qty, col_del = st.columns([6, 2, 1])
                 with col_check:
                     checked = st.checkbox(article, key=cat_key)
                 with col_qty:
@@ -439,6 +458,11 @@ with tab_produits:
                             key=qty_key,
                             label_visibility="collapsed",
                         )
+                with col_del:
+                    if st.button("🗑️", key=del_key):
+                        rayon["articles"].remove(article)
+                        save_catalogue(catalogue)
+                        st.rerun()
 
 # =====================
 # ONGLET 3 : MON STOCK
