@@ -460,9 +460,10 @@ with tab_produits:
             for j, article in matching:
                 cat_key = f"cat_{rayon['nom']}_{j}"
                 qty_key = f"qty_{rayon['nom']}_{j}"
+                unit_key = f"unit_{rayon['nom']}_{j}"
                 del_key = f"del_{rayon['nom']}_{article}"
 
-                col_check, col_qty, col_del = st.columns([6, 2, 1])
+                col_check, col_qty, col_unit, col_del = st.columns([5, 1, 1, 0.5])
                 with col_check:
                     checked = st.checkbox(article, key=cat_key)
                 with col_qty:
@@ -472,6 +473,15 @@ with tab_produits:
                             min_value=1,
                             value=st.session_state.get(qty_key, 1),
                             key=qty_key,
+                            label_visibility="collapsed",
+                        )
+                with col_unit:
+                    if checked:
+                        st.selectbox(
+                            "Unité",
+                            options=UNITES,
+                            index=0,
+                            key=unit_key,
                             label_visibility="collapsed",
                         )
                 with col_del:
@@ -719,16 +729,18 @@ for recette in recettes:
 recipe_ingredients_final = get_recipe_ingredients(recettes, selected_recipes_final)
 recipe_by_rayon_final = merge_ingredients(recipe_ingredients_final)
 
-# Produits cochés avec quantités
+# Produits cochés avec quantités et unités
 free_items_final = {}
 for rayon in catalogue:
     items = []
     for j, article in enumerate(rayon["articles"]):
         cat_key = f"cat_{rayon['nom']}_{j}"
         qty_key = f"qty_{rayon['nom']}_{j}"
+        unit_key = f"unit_{rayon['nom']}_{j}"
         if st.session_state.get(cat_key, False):
             qty = st.session_state.get(qty_key, 1)
-            items.append((article, qty, "pièce"))
+            unite = st.session_state.get(unit_key, "pièce")
+            items.append((article, qty, unite))
     if items:
         free_items_final[rayon["nom"]] = items
 
@@ -813,8 +825,18 @@ with tab_liste:
                 else:
                     st.error(message)
         with col3:
-            if st.button("🗑️ Réinitialiser les coches"):
+            if st.button("🗑️ Tout réinitialiser"):
                 st.session_state.checked_items = set()
+                # Supprimer les recettes, produits, stock et coches
+                keys_to_delete = []
+                for k in st.session_state:
+                    if (k.startswith("check_") or k.startswith("recette_") or
+                        k.startswith("cat_") or k.startswith("qty_") or
+                        k.startswith("unit_") or k.startswith("stock_") or
+                        k.startswith("stock_qty_") or k.startswith("stock_unit_")):
+                        keys_to_delete.append(k)
+                for k in keys_to_delete:
+                    del st.session_state[k]
                 st.rerun()
     else:
         st.info(
