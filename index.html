@@ -1,0 +1,1088 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#ED705D">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="favicon.png">
+<title>Liste de courses</title>
+<style>
+:root {
+  --bg: #f5f5f7;
+  --card: #ffffff;
+  --primary: #ED705D;
+  --primary-light: #fdf0ee;
+  --primary-hover: #d9604f;
+  --danger: #ff3b30;
+  --danger-light: #fff0ef;
+  --success: #34c759;
+  --success-light: #eafbf0;
+  --orange: #ff9500;
+  --text: #1a1a1a;
+  --text-secondary: #6e6e73;
+  --text-tertiary: #aeaeb2;
+  --border: #e5e5ea;
+  --border-light: #f2f2f7;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+  --shadow: 0 2px 8px rgba(0,0,0,0.06), 0 0 1px rgba(0,0,0,0.04);
+  --shadow-lg: 0 8px 30px rgba(0,0,0,0.08), 0 0 1px rgba(0,0,0,0.04);
+  --shadow-xl: 0 20px 60px rgba(0,0,0,0.12);
+  --radius: 14px;
+  --radius-sm: 10px;
+  --radius-xs: 8px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; min-height: 100dvh; line-height: 1.5; }
+
+/* ===== HEADER ===== */
+.top-bar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.header {
+  background: linear-gradient(135deg, #ED705D 0%, #d4574a 100%);
+  color: white;
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.header-icon { font-size: 1.6em; }
+.header-text { font-size: 1.25em; font-weight: 700; letter-spacing: -0.02em; }
+
+/* ===== TABS ===== */
+.tabs {
+  display: flex;
+  background: var(--card);
+  padding: 0 8px;
+  box-shadow: var(--shadow-sm);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.tabs::-webkit-scrollbar { display: none; }
+.tab-btn {
+  flex: 1;
+  min-width: 0;
+  padding: 14px 8px 12px;
+  border: none;
+  background: none;
+  font-family: inherit;
+  font-size: 0.75em;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  border-bottom: 2.5px solid transparent;
+  transition: all 0.25s ease;
+  white-space: nowrap;
+  letter-spacing: -0.01em;
+}
+.tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); font-weight: 600; }
+.tab-btn:hover:not(.active) { color: var(--text-secondary); }
+.tab-content { display: none; padding: 20px 16px 100px; max-width: 680px; margin: 0 auto; animation: fadeIn 0.25s ease; }
+.tab-content.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ===== SEARCH ===== */
+.search-box {
+  width: 100%;
+  padding: 12px 16px 12px 42px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 0.95em;
+  color: var(--text);
+  background: var(--card) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%23aeaeb2' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E") 14px center no-repeat;
+  transition: all 0.2s ease;
+  margin-bottom: 20px;
+}
+.search-box:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px rgba(237,112,93,0.12); }
+.search-box::placeholder { color: var(--text-tertiary); }
+
+/* ===== CARDS ===== */
+.card {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+.card-header {
+  padding: 14px 18px;
+  font-weight: 600;
+  font-size: 0.88em;
+  letter-spacing: 0.02em;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  user-select: none;
+  transition: background 0.15s ease;
+}
+.card-header:hover { background: var(--border-light); }
+.card-header .count {
+  background: var(--primary-light);
+  color: var(--primary);
+  font-size: 0.78em;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 20px;
+}
+.card-header .arrow {
+  color: var(--text-tertiary);
+  transition: transform 0.25s ease;
+  font-size: 0.7em;
+  margin-left: 8px;
+}
+.card-header.open .arrow { transform: rotate(90deg); }
+.card-body { display: none; }
+.card-body.open { display: block; }
+
+/* ===== ITEM ROWS ===== */
+.item-row {
+  display: flex;
+  align-items: center;
+  padding: 10px 18px;
+  gap: 10px;
+  transition: background 0.15s ease;
+  border-top: 1px solid var(--border-light);
+}
+.item-row:hover { background: #fafafa; }
+.item-row label {
+  flex: 1;
+  cursor: pointer;
+  font-size: 0.92em;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  color: var(--text);
+}
+.item-row label span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Custom checkbox */
+input[type="checkbox"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  border: 2px solid var(--border);
+  border-radius: 7px;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  position: relative;
+  background: white;
+}
+input[type="checkbox"]:checked {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+input[type="checkbox"]:checked::after {
+  content: '';
+  position: absolute;
+  left: 6px;
+  top: 2px;
+  width: 6px;
+  height: 11px;
+  border: solid white;
+  border-width: 0 2.5px 2.5px 0;
+  transform: rotate(45deg);
+}
+input[type="checkbox"].check-success:checked { background: var(--success); border-color: var(--success); }
+
+/* Number + select inputs */
+.qty-unit { display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
+.qty-unit.hidden { display: none; }
+.input-sm {
+  padding: 6px 8px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-xs);
+  font-family: inherit;
+  font-size: 0.85em;
+  color: var(--text);
+  background: white;
+  transition: border-color 0.2s;
+}
+.input-sm:focus { outline: none; border-color: var(--primary); }
+input[type="number"].input-sm { width: 58px; text-align: center; }
+select.input-sm { padding-right: 4px; }
+
+/* ===== LIST ITEMS (Ma liste) ===== */
+.list-item {
+  display: flex;
+  align-items: center;
+  padding: 14px 18px;
+  gap: 14px;
+  transition: all 0.25s ease;
+  border-top: 1px solid var(--border-light);
+}
+.list-item.checked { background: #fafafa; }
+.list-item.checked .list-item-text {
+  text-decoration: line-through;
+  color: var(--text-tertiary);
+}
+.list-item-text { flex: 1; font-size: 0.95em; font-weight: 400; }
+
+/* ===== BUTTONS ===== */
+.btn {
+  padding: 12px 22px;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 0.9em;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  letter-spacing: -0.01em;
+}
+.btn-primary { background: var(--primary); color: white; }
+.btn-primary:hover { background: var(--primary-hover); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(237,112,93,0.3); }
+.btn-primary:active { transform: translateY(0); }
+.btn-danger { background: var(--danger); color: white; }
+.btn-danger:hover { background: #e0342b; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(255,59,48,0.25); }
+.btn-outline { background: transparent; color: var(--text-secondary); border: 1.5px solid var(--border); }
+.btn-outline:hover { background: var(--border-light); border-color: var(--text-tertiary); }
+.btn-sm { padding: 8px 16px; font-size: 0.82em; border-radius: var(--radius-xs); }
+.btn-ghost { background: none; border: none; cursor: pointer; padding: 6px; border-radius: var(--radius-xs); color: var(--text-tertiary); transition: all 0.15s; font-size: 1.1em; }
+.btn-ghost:hover { background: var(--danger-light); color: var(--danger); }
+.del-btn { opacity: 0; transition: opacity 0.2s; }
+.item-row:hover .del-btn { opacity: 1; }
+
+/* ===== PROGRESS BAR ===== */
+.progress-container { margin-bottom: 20px; }
+.progress-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.progress-label { font-size: 0.85em; font-weight: 600; color: var(--text-secondary); }
+.progress-count { font-size: 0.85em; font-weight: 700; color: var(--success); }
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  background: var(--border-light);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--success), #2db84e);
+  border-radius: 4px;
+  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ===== RECIPE CARDS ===== */
+.recipe-card {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  margin-bottom: 10px;
+  box-shadow: var(--shadow);
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+.recipe-card:hover { box-shadow: var(--shadow-lg); transform: translateY(-1px); }
+.recipe-card.selected { border-left: 4px solid var(--primary); background: var(--primary-light); }
+.recipe-card label { display: flex; align-items: flex-start; gap: 14px; cursor: pointer; }
+.recipe-name { font-weight: 600; font-size: 0.95em; color: var(--text); line-height: 1.3; }
+.recipe-detail { font-size: 0.8em; color: var(--text-tertiary); margin-top: 4px; line-height: 1.4; }
+
+/* ===== INGREDIENTS SUMMARY ===== */
+.summary-card {
+  background: linear-gradient(135deg, var(--primary-light) 0%, #fef5f3 100%);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-top: 24px;
+  border: 1px solid rgba(237,112,93,0.15);
+}
+.summary-card h3 { font-size: 0.95em; font-weight: 700; color: var(--primary); margin-bottom: 14px; }
+.summary-rayon { font-weight: 600; font-size: 0.82em; color: var(--text-secondary); margin-top: 12px; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.04em; }
+.summary-item { font-size: 0.85em; color: var(--text-secondary); padding-left: 8px; padding-top: 2px; }
+
+/* ===== FORM ===== */
+.form-row { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 14px; }
+.form-group { display: flex; flex-direction: column; gap: 5px; }
+.form-group label { font-size: 0.75em; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.04em; }
+.form-group input, .form-group select {
+  padding: 10px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-xs);
+  font-family: inherit;
+  font-size: 0.9em;
+  color: var(--text);
+  background: white;
+  transition: border-color 0.2s;
+}
+.form-group input:focus, .form-group select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(237,112,93,0.1); }
+.form-group.flex1 { flex: 1; min-width: 130px; }
+
+/* ===== COLLAPSIBLE ADD PRODUCT ===== */
+.add-section {
+  background: var(--card);
+  border-radius: var(--radius);
+  margin-bottom: 20px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+.add-section-header {
+  padding: 14px 18px;
+  font-weight: 600;
+  font-size: 0.9em;
+  color: var(--primary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background 0.15s;
+}
+.add-section-header:hover { background: var(--primary-light); }
+.add-section-body { display: none; padding: 16px 18px; border-top: 1px solid var(--border-light); }
+.add-section-body.open { display: block; }
+
+/* ===== MODAL ===== */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.4);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 200;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.2s ease;
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  background: white;
+  border-radius: 20px;
+  padding: 28px;
+  max-width: 380px;
+  width: 90%;
+  box-shadow: var(--shadow-xl);
+  animation: modalIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes modalIn { from { opacity: 0; transform: scale(0.9) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+.modal h3 { font-size: 1.1em; font-weight: 700; margin-bottom: 8px; color: var(--text); }
+.modal p { color: var(--text-secondary); font-size: 0.92em; margin-bottom: 20px; line-height: 1.5; }
+.modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
+
+/* ===== EMPTY STATE ===== */
+.empty-state { text-align: center; padding: 60px 24px; }
+.empty-state .icon { font-size: 3em; margin-bottom: 16px; opacity: 0.6; }
+.empty-state p { color: var(--text-tertiary); font-size: 0.95em; max-width: 280px; margin: 0 auto; line-height: 1.6; }
+
+/* ===== SECTION LABELS ===== */
+.section-title { font-size: 1.3em; font-weight: 800; letter-spacing: -0.03em; margin-bottom: 6px; }
+.section-subtitle { font-size: 0.85em; color: var(--text-tertiary); margin-bottom: 20px; line-height: 1.5; }
+.plats-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--primary-light);
+  color: var(--primary);
+  font-size: 0.82em;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 20px;
+  margin-bottom: 16px;
+}
+.divider { border: none; border-top: 1px solid var(--border-light); margin: 20px 0; }
+
+/* ===== RAYON HEADER in Ma liste ===== */
+.rayon-label {
+  font-size: 0.78em;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-secondary);
+  padding: 14px 18px 6px;
+  background: transparent;
+}
+
+/* ===== EDIT INGREDIENTS ===== */
+.edit-ing-item {
+  display: flex;
+  align-items: center;
+  padding: 10px 14px;
+  background: var(--border-light);
+  border-radius: var(--radius-xs);
+  margin-bottom: 6px;
+  gap: 10px;
+  font-size: 0.88em;
+  transition: background 0.15s;
+}
+.edit-ing-item:hover { background: var(--border); }
+.edit-ing-item span { flex: 1; }
+.edit-ing-item strong { font-weight: 600; color: var(--text); }
+.edit-ing-item em { color: var(--text-tertiary); font-style: normal; font-size: 0.9em; }
+
+/* ===== ACTIONS BAR ===== */
+.actions-bar { display: flex; gap: 10px; margin-top: 24px; }
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 600px) {
+  .header { padding: 14px 18px; }
+  .tab-btn { font-size: 0.7em; padding: 12px 4px 10px; }
+  .tab-content { padding: 16px 12px 100px; }
+  .form-row { flex-direction: column; }
+  .form-group.flex1 { min-width: 100%; }
+  .card-header { padding: 12px 14px; }
+  .item-row { padding: 10px 14px; }
+  .recipe-card { padding: 14px 14px; }
+  .del-btn { opacity: 0.6; }
+}
+@media (min-width: 601px) {
+  .header { padding: 20px 32px; }
+  .tab-content { padding: 28px 20px 100px; }
+}
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+<div class="header">
+  <span class="header-icon">🛒</span>
+  <span class="header-text">Liste de courses</span>
+</div>
+
+<div class="tabs">
+  <button class="tab-btn active" data-tab="recettes">🍽️ Recettes</button>
+  <button class="tab-btn" data-tab="produits">🏪 Produits</button>
+  <button class="tab-btn" data-tab="stock">🏠 Stock</button>
+  <button class="tab-btn" data-tab="liste">📋 Liste</button>
+  <button class="tab-btn" data-tab="gerer">✏️ Gérer</button>
+</div>
+</div>
+
+<!-- TAB: Recettes -->
+<div id="tab-recettes" class="tab-content active">
+  <input type="text" class="search-box" id="search-recettes" placeholder="Rechercher une recette...">
+  <div id="recettes-list"></div>
+  <div id="recettes-summary"></div>
+</div>
+
+<!-- TAB: Produits -->
+<div id="tab-produits" class="tab-content">
+  <div class="add-section">
+    <div class="add-section-header" onclick="this.nextElementSibling.classList.toggle('open')">
+      <span>➕</span> Ajouter un nouveau produit
+    </div>
+    <div class="add-section-body">
+      <div class="form-row">
+        <div class="form-group flex1">
+          <label>Nom du produit</label>
+          <input type="text" id="new-product-name" placeholder="Ex : Beurre doux">
+        </div>
+        <div class="form-group">
+          <label>Rayon</label>
+          <select id="new-product-rayon"></select>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="addProduct()">Ajouter</button>
+      </div>
+    </div>
+  </div>
+  <input type="text" class="search-box" id="search-produits" placeholder="Rechercher un produit...">
+  <div id="produits-list"></div>
+</div>
+
+<!-- TAB: Mon stock -->
+<div id="tab-stock" class="tab-content">
+  <p class="section-subtitle">Renseignez ce que vous avez chez vous. Ces produits seront soustraits de la liste finale.</p>
+  <input type="text" class="search-box" id="search-stock" placeholder="Rechercher un produit...">
+  <div id="stock-list"></div>
+</div>
+
+<!-- TAB: Ma liste -->
+<div id="tab-liste" class="tab-content">
+  <div id="liste-content"></div>
+</div>
+
+<!-- TAB: Gérer les recettes -->
+<div id="tab-gerer" class="tab-content">
+  <div class="form-group" style="margin-bottom:18px">
+    <label>Choisir une recette</label>
+    <select id="recipe-selector" onchange="loadRecipeEditor()"></select>
+  </div>
+  <div class="form-group" style="margin-bottom:18px">
+    <label>Nom de la recette</label>
+    <input type="text" id="recipe-name" placeholder="Ex : Gratin dauphinois">
+  </div>
+  <hr class="divider">
+  <div class="section-title" style="font-size:1em;margin-bottom:14px">Ingrédients</div>
+  <div class="form-row">
+    <div class="form-group flex1">
+      <label>Nom</label>
+      <input type="text" id="ing-name" placeholder="Ex : Pommes de terre">
+    </div>
+    <div class="form-group">
+      <label>Rayon</label>
+      <select id="ing-rayon"></select>
+    </div>
+    <div class="form-group">
+      <label>Qté</label>
+      <input type="number" id="ing-qty" value="1" min="1" style="width:70px">
+    </div>
+    <div class="form-group">
+      <label>Unité</label>
+      <select id="ing-unite">
+        <option>pièce</option><option>g</option><option>kg</option><option>ml</option><option>cl</option><option>L</option>
+      </select>
+    </div>
+    <button class="btn btn-primary btn-sm" onclick="addIngredient()">➕</button>
+  </div>
+  <div id="edit-ingredients"></div>
+  <div style="margin-top:20px;display:flex;gap:10px">
+    <button class="btn btn-primary" onclick="saveRecipe()">💾 Enregistrer</button>
+    <button class="btn btn-danger btn-sm" id="delete-recipe-btn" style="display:none" onclick="deleteRecipe()">🗑️ Supprimer</button>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <h3 id="modal-title">Confirmer</h3>
+    <p id="modal-text"></p>
+    <div class="modal-actions">
+      <button class="btn btn-outline btn-sm" onclick="closeModal()">Annuler</button>
+      <button class="btn btn-danger btn-sm" id="modal-confirm">Confirmer</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// =====================
+// DATA
+// =====================
+const UNITES = ["pièce", "g", "kg", "ml", "cl", "L"];
+const RAYON_ORDER = [
+  "BOULANGERIE","LÉGUMES","FRUITS","AIL & FINES HERBES","CHARCUTERIE","TRAITEUR",
+  "POISSONNERIE","BOUCHERIE","SURGELÉS","FROMAGES","YAOURTS","PRODUITS LAITIERS",
+  "ÉPICERIE SALÉE","CUISINE DU MONDE","ÉPICERIE SUCRÉE","BOISSONS","HYGIÈNE & DIVERS"
+];
+
+const DEFAULT_RECETTES = [{"nom": "Lentilles au curry", "ingredients": [{"nom": "Crème fraîche", "rayon": "PRODUITS LAITIERS", "quantite": 20, "unite": "cl"}, {"nom": "Lardons nature", "rayon": "CHARCUTERIE", "quantite": 150, "unite": "g"}, {"nom": "Lentilles vertes", "rayon": "ÉPICERIE SALÉE", "quantite": 250, "unite": "g"}]}, {"nom": "Nems / riz", "ingredients": [{"nom": "Laitue", "rayon": "LÉGUMES", "quantite": 1, "unite": "pièce"}, {"nom": "Nems", "rayon": "TRAITEUR", "quantite": 6, "unite": "pièce"}, {"nom": "Riz blanc", "rayon": "ÉPICERIE SALÉE", "quantite": 125, "unite": "g"}]}, {"nom": "Pizza champignons / courgettes", "ingredients": [{"nom": "Champignons", "rayon": "LÉGUMES", "quantite": 250, "unite": "g"}, {"nom": "Courgettes", "rayon": "LÉGUMES", "quantite": 1, "unite": "pièce"}, {"nom": "Crème fraîche", "rayon": "PRODUITS LAITIERS", "quantite": 20, "unite": "cl"}, {"nom": "Herbes de Provence", "rayon": "AIL & FINES HERBES", "quantite": 10, "unite": "g"}, {"nom": "Mozzarella", "rayon": "FROMAGES", "quantite": 1, "unite": "pièce"}, {"nom": "Pâte à pizza", "rayon": "TRAITEUR", "quantite": 1, "unite": "pièce"}]}, {"nom": "Poisson / flageolets", "ingredients": [{"nom": "Flageolets", "rayon": "ÉPICERIE SALÉE", "quantite": 1, "unite": "pièce"}, {"nom": "Poisson", "rayon": "POISSONNERIE", "quantite": 2, "unite": "pièce"}]}, {"nom": "Poisson / haricots verts", "ingredients": [{"nom": "Haricots verts", "rayon": "ÉPICERIE SALÉE", "quantite": 1, "unite": "pièce"}, {"nom": "Poisson", "rayon": "POISSONNERIE", "quantite": 2, "unite": "pièce"}]}, {"nom": "Poulet / gnocchis", "ingredients": [{"nom": "Gnocchis", "rayon": "TRAITEUR", "quantite": 1, "unite": "pièce"}, {"nom": "Poulet", "rayon": "BOUCHERIE", "quantite": 2, "unite": "pièce"}]}, {"nom": "Poulet courgettes", "ingredients": [{"nom": "Courgettes", "rayon": "LÉGUMES", "quantite": 1, "unite": "pièce"}, {"nom": "Poulet", "rayon": "BOUCHERIE", "quantite": 2, "unite": "pièce"}]}, {"nom": "Pâtes courgettes à la provençale", "ingredients": [{"nom": "Conserve courgettes à la provençale", "rayon": "ÉPICERIE SALÉE", "quantite": 1, "unite": "pièce"}, {"nom": "Pâtes", "rayon": "ÉPICERIE SALÉE", "quantite": 250, "unite": "g"}]}, {"nom": "Pâtes crevettes", "ingredients": [{"nom": "Crevettes", "rayon": "POISSONNERIE", "quantite": 200, "unite": "g"}, {"nom": "Crème fraîche", "rayon": "PRODUITS LAITIERS", "quantite": 20, "unite": "cl"}, {"nom": "Pâtes", "rayon": "ÉPICERIE SALÉE", "quantite": 250, "unite": "g"}]}, {"nom": "Quiche lorraine", "ingredients": [{"nom": "Crème fraîche", "rayon": "PRODUITS LAITIERS", "quantite": 20, "unite": "cl"}, {"nom": "Lait", "rayon": "PRODUITS LAITIERS", "quantite": 20, "unite": "cl"}, {"nom": "Pancetta", "rayon": "CHARCUTERIE", "quantite": 150, "unite": "g"}, {"nom": "Pâte brisée", "rayon": "TRAITEUR", "quantite": 1, "unite": "pièce"}, {"nom": "Œufs", "rayon": "PRODUITS LAITIERS", "quantite": 2, "unite": "pièce"}]}, {"nom": "Ravioles / jambon blanc", "ingredients": [{"nom": "Jambon blanc", "rayon": "CHARCUTERIE", "quantite": 4, "unite": "pièce"}, {"nom": "Ravioles du Dauphiné", "rayon": "TRAITEUR", "quantite": 2, "unite": "pièce"}]}, {"nom": "Riz / courgettes provençales / poulet", "ingredients": [{"nom": "Conserve courgettes à la provençale", "rayon": "ÉPICERIE SALÉE", "quantite": 1, "unite": "pièce"}, {"nom": "Poulet", "rayon": "BOUCHERIE", "quantite": 2, "unite": "pièce"}, {"nom": "Riz blanc", "rayon": "ÉPICERIE SALÉE", "quantite": 125, "unite": "g"}]}, {"nom": "Salade de crudités", "ingredients": [{"nom": "Betteraves", "rayon": "LÉGUMES", "quantite": 4, "unite": "pièce"}, {"nom": "Carottes", "rayon": "LÉGUMES", "quantite": 3, "unite": "pièce"}, {"nom": "Concombre", "rayon": "LÉGUMES", "quantite": 1, "unite": "pièce"}, {"nom": "Tomates", "rayon": "LÉGUMES", "quantite": 3, "unite": "pièce"}, {"nom": "Œuf", "rayon": "PRODUITS LAITIERS", "quantite": 4, "unite": "pièce"}]}, {"nom": "Salade jambon melon fêta", "ingredients": [{"nom": "Feta", "rayon": "FROMAGES", "quantite": 1, "unite": "pièce"}, {"nom": "Jambon de pays/cru", "rayon": "CHARCUTERIE", "quantite": 6, "unite": "pièce"}, {"nom": "Melon", "rayon": "FRUITS", "quantite": 1, "unite": "pièce"}, {"nom": "Roquette", "rayon": "LÉGUMES", "quantite": 1, "unite": "pièce"}]}, {"nom": "Semoule merguez courgettes", "ingredients": [{"nom": "Courgettes", "rayon": "LÉGUMES", "quantite": 1, "unite": "pièce"}, {"nom": "Merguez", "rayon": "BOUCHERIE", "quantite": 6, "unite": "pièce"}, {"nom": "Pois chiches", "rayon": "ÉPICERIE SALÉE", "quantite": 150, "unite": "g"}, {"nom": "Semoule", "rayon": "ÉPICERIE SALÉE", "quantite": 250, "unite": "g"}]}, {"nom": "Soupe carottes / courgettes", "ingredients": [{"nom": "Carottes", "rayon": "LÉGUMES", "quantite": 200, "unite": "g"}, {"nom": "Courgettes", "rayon": "LÉGUMES", "quantite": 600, "unite": "g"}, {"nom": "Cube de bouillon de bœuf", "rayon": "ÉPICERIE SALÉE", "quantite": 1, "unite": "pièce"}, {"nom": "Kiri", "rayon": "FROMAGES", "quantite": 2, "unite": "pièce"}, {"nom": "Oignons", "rayon": "AIL & FINES HERBES", "quantite": 1, "unite": "pièce"}]}, {"nom": "Soupe carottes / lentilles corail", "ingredients": [{"nom": "Carottes", "rayon": "LÉGUMES", "quantite": 450, "unite": "g"}, {"nom": "Lentilles corail", "rayon": "ÉPICERIE SALÉE", "quantite": 200, "unite": "g"}, {"nom": "Oignons", "rayon": "AIL & FINES HERBES", "quantite": 1, "unite": "pièce"}]}, {"nom": "Steak / pâtes", "ingredients": [{"nom": "Pâtes", "rayon": "ÉPICERIE SALÉE", "quantite": 250, "unite": "g"}, {"nom": "Steak haché", "rayon": "BOUCHERIE", "quantite": 4, "unite": "pièce"}]}, {"nom": "Tarte fine chèvre courgettes", "ingredients": [{"nom": "Bûche chèvre", "rayon": "FROMAGES", "quantite": 1, "unite": "pièce"}, {"nom": "Courgettes", "rayon": "LÉGUMES", "quantite": 2, "unite": "pièce"}, {"nom": "Crème fraîche", "rayon": "PRODUITS LAITIERS", "quantite": 20, "unite": "cl"}, {"nom": "Herbes de Provence", "rayon": "AIL & FINES HERBES", "quantite": 1, "unite": "pièce"}, {"nom": "Pâte brisée", "rayon": "TRAITEUR", "quantite": 1, "unite": "pièce"}]}, {"nom": "Tarte tomates thon", "ingredients": [{"nom": "Fromage à tartiner", "rayon": "FROMAGES", "quantite": 1, "unite": "pièce"}, {"nom": "Herbes de Provence", "rayon": "AIL & FINES HERBES", "quantite": 10, "unite": "g"}, {"nom": "Pâte brisée", "rayon": "TRAITEUR", "quantite": 1, "unite": "pièce"}, {"nom": "Thon", "rayon": "ÉPICERIE SALÉE", "quantite": 1, "unite": "pièce"}, {"nom": "Tomates", "rayon": "LÉGUMES", "quantite": 3, "unite": "pièce"}]}];
+const DEFAULT_CATALOGUE = [{"nom": "AIL & FINES HERBES", "articles": ["Ail", "Amandes grillées", "Bouquet de romarin", "Ciboulette", "Curcuma", "Estragon", "Herbes de Provence", "Menthe (10 feuilles)", "Oignon", "Persil frais", "Persil sec", "Échalote"]}, {"nom": "BOISSONS", "articles": ["1664 0.0%", "Biscuits apéro + truc à tartiner", "Bières", "Cidre (x2)", "Coca zéro (petit)", "Desperados", "Eau gazeuse", "Eau minérale (petite bouteille)", "Ice-tea", "Jus d'orange", "Jus de fruits (multi fruits)", "Jus de mangue", "Limonade", "Martini blanc", "Perrier fruits", "Petite bouteille d'eau", "Pringles", "Sirop menthe", "Tourtel twist", "Vin", "Volvic citron"]}, {"nom": "BOUCHERIE", "articles": ["Bœuf haché", "Carpaccio", "Merguez", "Nuggets", "Paupiettes", "Poulet (2 filets)", "Poulet entier", "Poulet rôti cuit", "Saucisses", "Steaks hachés"]}, {"nom": "BOULANGERIE", "articles": ["Baguette graines", "Brioche", "Pain blanc bio", "Pain boule", "Pain complet", "Pain de mie bio et bon", "Pain de mie complet", "Pains au lait", "Pains au lait pépites chocolat"]}, {"nom": "CHARCUTERIE", "articles": ["Allumettes jambon", "Bresaola", "Chorizo entier", "Chorizo tranché", "Jambon blanc", "Jambon cru (6 tranches)", "Jambon dinde", "Jambon poulet", "Lardons nature", "Pancetta", "Rillettes"]}, {"nom": "CUISINE DU MONDE", "articles": ["Guacamole", "Houmous", "Lait de coco", "Nouilles chinoises", "Pâte de curry jaune", "Sauce ail piment", "Sauce salsa", "Sauce salée", "Tortillas"]}, {"nom": "FROMAGES", "articles": ["Babybel", "Caprice des dieux", "Chèvre bûche", "Chèvre frais", "Comté", "Crottin chèvre", "Feta", "Fromage tomme brebis", "Fromage à tartiner", "Gouda", "Gruyère croque", "Gruyère râpé (1 paquet)", "Kiri", "Mozza", "Parmesan en copeaux", "Parmesan morceau"]}, {"nom": "FRUITS", "articles": ["Abricots", "Amandes / fruits secs", "Bananes", "Citron", "Clémentines / mandarines", "Fraises", "Framboises", "Kiwis", "Melon", "Nectarines", "Orange (jus)", "Petites pommes bio", "Poires", "Pêches plates", "Quetches"]}, {"nom": "HYGIÈNE & DIVERS", "articles": ["Après-shampooing", "Bac à glaçons", "Baume lèvres", "Bicarbonate ménager", "Boîtes mouchoirs", "Briochin ultra dégraissant", "Brosse à dents Boubou", "Carrés coton", "Chewing-gum", "Compresses (non-tissées)", "Coton-tige bébé", "Coton-tiges", "Couches boubou (taille 5)", "Crème pour les mains", "Crème solaire boubou", "Dentifrice", "Destop", "Dissolvant", "Dosettes lave-vaisselle", "Déodorant", "Détachant linge", "Eau micellaire bébé bio", "Essoreuse à salade", "Gel hydroalcoolique", "Gel WC", "Lingettes decolor", "Lingettes parquet", "Liniment bio", "Liquide vaisselle", "Papier A4", "Papier sulfurisé", "Paquets mouchoirs", "Patchs points noirs", "Piles AA LR6", "Piles LR44", "PQ", "Produit de rinçage", "Sac-poubelle compostable", "Sacs poubelle 100L", "Savon (x2)", "Savon Marseille copeaux", "Sel régénérant lave-vaisselle", "Shampooing", "Sopalin", "Sérum phy", "Vinaigre blanc"]}, {"nom": "LÉGUMES", "articles": ["Betteraves", "Carottes", "Champignons", "Concombre", "Courgettes", "Laitue", "Poireaux", "Poivron rouge", "Pommes de terre", "Radis", "Roquette", "Tomates", "Tomates cerises"]}, {"nom": "POISSONNERIE", "articles": ["Crevettes", "Poisson", "Surimi (petits paquets)"]}, {"nom": "PRODUITS LAITIERS", "articles": ["Beurre doux", "Beurre salé", "Crème fraîche liquide (petites briques)", "Crème fraîche légère", "Crème fraîche épaisse 30%", "Crème liquide", "Lait", "Œufs"]}, {"nom": "SURGELÉS", "articles": ["Boulettes bœuf", "Courgettes duo", "Crêpes boubou (emmental)", "Gaufres surgelées", "Glaces", "Petits pois surgelés", "Pizzas surgelées", "Plats surgelés", "Poissons panés", "Poêlée de légumes", "Purée", "Purée de pois cassés"]}, {"nom": "TRAITEUR", "articles": ["Carottes râpées", "Croque-monsieur", "Galettes", "Galettes veggie", "Gnocchis", "Nems poulet", "Pâte brisée", "Pâte feuilletée", "Pâte à pizza", "Pâtes fraîches", "Quiche chèvre épinards", "Ravioles du Dauphiné", "Taboulé", "Tofu"]}, {"nom": "YAOURTS", "articles": ["Danettes chocolat", "Fromage blanc 0%", "Petits Gervais fruits bananes", "Petits suisses", "Skyr siggis vanille", "Skyr Yoplait nature", "Yaourts chocolat", "Yaourts fruits", "Yaourts natures"]}, {"nom": "ÉPICERIE SALÉE", "articles": ["Bouillon de poulet", "Carottes", "Champignons", "Conserve courgettes à la provençale", "Coulis de tomates", "Croûtons nature", "Croûtons à l'ail", "Cube de bouillon de bœuf", "Curry", "Cœurs d'artichauts (x2)", "Flageolets", "Haricots beurre", "Haricots rouges", "Haricots verts", "Huile de lin", "Huile de tournesol", "Jus de citron", "Ketchup", "Lentilles", "Lentilles corail", "Lentilles vertes", "Maïs", "Moutarde", "Muscade", "Olives vertes", "Paprika", "Pesto", "Petits pois", "Piment de Cayenne", "Piment doux", "Plats cuisinés (paella x2)", "Pois chiches", "Poivre noir grains", "Pâte de lentilles corail", "Pâtes alphabet", "Pâtes complètes", "Pâtes coquillettes", "Pâtes linguines / spaghettis", "Riz blanc", "Riz complet (ou thai)", "Sauce pâtes", "Semoule", "Spaghettis", "Thon (130g égoutté)", "Tomates pelées entières"]}, {"nom": "ÉPICERIE SUCRÉE", "articles": ["Balisto", "Belvita miel pépites de chocolat", "Biscuits boubou", "Biscuits gerblé pépites", "Bjorg croustillant chocolat noir", "Boîte bonbons haribo", "Brioche", "Café", "Chocapic", "Choco trésor", "Chocolat noir", "Chocolat noir / noisettes", "Chocolat pâtissier lait", "Chocolat pâtissier noir", "Compote en bocal (bio sans sucres ajoutés)", "Compote en gourdes", "Céréales chat (pétales complètes sans choco)", "Céréales pétales choco (Boubou)", "Daims", "Dinosaurus", "Farine bio", "Flocons d'avoine", "Gaufre chocolat noir", "Gaufres choco", "Gerblé pépites de choco", "Granola choco", "Gâteaux fourrés à la fraise", "Gâteaux prince", "Gâteaux Simon", "Infusions", "Infusions verveine menthe", "Krisprolls", "Levure alsa", "Madeleines bio", "Miel", "Muesli chocolat noir", "Nutella", "Palmito", "Petits chocos bonne maman", "Petits écoliers chocolat lait", "Petits écoliers noirs bio", "Poche gâteau tout prêt", "Poudre de noisettes", "Pâte à tartiner choco bio", "Sucre en poudre", "Thé", "Thé noir"]}];
+
+function loadData(key, fallback) {
+  try { const d = localStorage.getItem(key); return d ? JSON.parse(d) : fallback; }
+  catch { return fallback; }
+}
+function saveData(key, data) { localStorage.setItem(key, JSON.stringify(data)); }
+
+let recettes = loadData('courses_recettes', DEFAULT_RECETTES);
+let catalogue = loadData('courses_catalogue', DEFAULT_CATALOGUE);
+let selectedRecipes = loadData('courses_selected_recipes', {});
+let selectedProducts = loadData('courses_selected_products', {});
+let stockProducts = loadData('courses_stock', {});
+let checkedListItems = loadData('courses_checked', {});
+let editIngredients = [];
+
+function persist() {
+  saveData('courses_recettes', recettes);
+  saveData('courses_catalogue', catalogue);
+  saveData('courses_selected_recipes', selectedRecipes);
+  saveData('courses_selected_products', selectedProducts);
+  saveData('courses_stock', stockProducts);
+  saveData('courses_checked', checkedListItems);
+}
+
+// =====================
+// UTILS
+// =====================
+function formatItem(nom, qty, unite) {
+  if (unite === 'pièce') return qty === 1 ? nom : `${nom} (x${qty})`;
+  return `${nom} (${qty}${unite})`;
+}
+
+function mergeIngredients(items) {
+  const merged = {};
+  for (const {nom, rayon, quantite, unite} of items) {
+    const key = `${nom.toLowerCase()}||${rayon}||${unite}`;
+    if (merged[key]) merged[key].quantite += quantite;
+    else merged[key] = {nom, rayon, quantite, unite};
+  }
+  const result = {};
+  for (const d of Object.values(merged)) {
+    if (!result[d.rayon]) result[d.rayon] = [];
+    result[d.rayon].push({nom: d.nom, quantite: d.quantite, unite: d.unite});
+  }
+  for (const r in result) result[r].sort((a,b) => a.nom.localeCompare(b.nom, 'fr'));
+  return result;
+}
+
+function buildFinalList() {
+  const allItems = [];
+  for (const r of recettes) {
+    if (selectedRecipes[r.nom]) {
+      for (const ing of r.ingredients) {
+        allItems.push({nom: ing.nom, rayon: ing.rayon, quantite: ing.quantite || 1, unite: ing.unite || 'pièce'});
+      }
+    }
+  }
+  for (const key in selectedProducts) {
+    const p = selectedProducts[key];
+    if (p) allItems.push({nom: p.nom, rayon: p.rayon, quantite: p.quantite, unite: p.unite});
+  }
+  const merged = mergeIngredients(allItems);
+  const stockIndex = {};
+  for (const key in stockProducts) {
+    const s = stockProducts[key];
+    if (s) {
+      const sk = `${s.nom.toLowerCase()}||${s.rayon}||${s.unite}`;
+      if (stockIndex[sk]) stockIndex[sk].quantite += s.quantite;
+      else stockIndex[sk] = {...s};
+    }
+  }
+  const result = {};
+  for (const rayon in merged) {
+    const items = [];
+    for (const item of merged[rayon]) {
+      const sk = `${item.nom.toLowerCase()}||${rayon}||${item.unite}`;
+      if (stockIndex[sk]) {
+        const remaining = item.quantite - stockIndex[sk].quantite;
+        if (remaining > 0) items.push({...item, quantite: remaining});
+      } else {
+        items.push(item);
+      }
+    }
+    if (items.length) result[rayon] = items;
+  }
+  const ordered = {};
+  for (const r of RAYON_ORDER) { if (result[r]) ordered[r] = result[r]; }
+  for (const r of Object.keys(result).sort()) { if (!ordered[r]) ordered[r] = result[r]; }
+  return ordered;
+}
+
+function escHtml(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+// =====================
+// TABS
+// =====================
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    btn.classList.add('active');
+    const tab = document.getElementById('tab-' + btn.dataset.tab);
+    tab.classList.add('active');
+    if (btn.dataset.tab === 'liste') renderListe();
+    if (btn.dataset.tab === 'gerer') renderGerer();
+  });
+});
+
+// =====================
+// TAB: RECETTES
+// =====================
+function renderRecettes() {
+  const q = (document.getElementById('search-recettes').value || '').toLowerCase().trim();
+  const sorted = [...recettes].sort((a,b) => a.nom.localeCompare(b.nom, 'fr'));
+  const filtered = q ? sorted.filter(r => r.nom.toLowerCase().includes(q)) : sorted;
+  const container = document.getElementById('recettes-list');
+
+  container.innerHTML = filtered.map(r => {
+    const detail = r.ingredients.map(i => formatItem(i.nom, i.quantite||1, i.unite||'pièce')).join(', ');
+    const checked = selectedRecipes[r.nom] ? 'checked' : '';
+    const selClass = selectedRecipes[r.nom] ? 'selected' : '';
+    return `<div class="recipe-card ${selClass}">
+      <label><input type="checkbox" ${checked} onchange="toggleRecipe('${escHtml(r.nom)}', this.checked)">
+        <div><div class="recipe-name">${escHtml(r.nom)}</div><div class="recipe-detail">${escHtml(detail)}</div></div>
+      </label>
+    </div>`;
+  }).join('');
+
+  const selNames = recettes.filter(r => selectedRecipes[r.nom]).map(r => r.nom);
+  const summary = document.getElementById('recettes-summary');
+  if (!selNames.length) { summary.innerHTML = ''; return; }
+  const allIngs = [];
+  for (const r of recettes) {
+    if (selectedRecipes[r.nom]) {
+      for (const ing of r.ingredients) allIngs.push({nom:ing.nom, rayon:ing.rayon, quantite:ing.quantite||1, unite:ing.unite||'pièce'});
+    }
+  }
+  const byRayon = mergeIngredients(allIngs);
+  let html = '<div class="summary-card"><h3>Ingrédients sélectionnés</h3>';
+  for (const rayon of Object.keys(byRayon).sort()) {
+    html += `<div class="summary-rayon">${escHtml(rayon)}</div>`;
+    for (const it of byRayon[rayon]) html += `<div class="summary-item">• ${escHtml(formatItem(it.nom, it.quantite, it.unite))}</div>`;
+  }
+  summary.innerHTML = html + '</div>';
+}
+
+function toggleRecipe(name, checked) {
+  if (checked) selectedRecipes[name] = true;
+  else delete selectedRecipes[name];
+  persist();
+  renderRecettes();
+}
+
+document.getElementById('search-recettes').addEventListener('input', renderRecettes);
+
+// =====================
+// TAB: PRODUITS
+// =====================
+const openProduitsRayons = new Set();
+
+function toggleProduitsRayon(nom) {
+  if (openProduitsRayons.has(nom)) openProduitsRayons.delete(nom);
+  else openProduitsRayons.add(nom);
+  const hdr = document.querySelector(`[data-produits-rayon="${CSS.escape(nom)}"]`);
+  if (hdr) { hdr.classList.toggle('open'); hdr.nextElementSibling.classList.toggle('open'); }
+}
+
+function renderProduits() {
+  const q = (document.getElementById('search-produits').value || '').toLowerCase().trim();
+  const container = document.getElementById('produits-list');
+  let html = '';
+  for (const rayon of catalogue) {
+    const matching = rayon.articles.filter(a => !q || a.toLowerCase().includes(q));
+    if (!matching.length) continue;
+    const isOpen = q || openProduitsRayons.has(rayon.nom);
+    const open = isOpen ? 'open' : '';
+    html += `<div class="card">
+      <div class="card-header ${open}" data-produits-rayon="${escHtml(rayon.nom)}" onclick="toggleProduitsRayon('${escHtml(rayon.nom)}')">
+        <span>${escHtml(rayon.nom)}</span>
+        <span><span class="count">${matching.length}</span> <span class="arrow">▶</span></span>
+      </div>
+      <div class="card-body ${open}">`;
+    for (const article of matching) {
+      const key = `${rayon.nom}||${article}`;
+      const sel = selectedProducts[key];
+      const checked = sel ? 'checked' : '';
+      const qty = sel ? sel.quantite : 1;
+      const unite = sel ? sel.unite : 'pièce';
+      const showQty = sel ? '' : 'hidden';
+      html += `<div class="item-row">
+        <label><input type="checkbox" ${checked} onchange="toggleProduct('${escHtml(key)}','${escHtml(rayon.nom)}','${escHtml(article)}',this.checked)"><span>${escHtml(article)}</span></label>
+        <div class="qty-unit ${showQty}">
+          <input type="number" class="input-sm" min="1" value="${qty}" onchange="updateProductQty('${escHtml(key)}',this.value)">
+          <select class="input-sm" onchange="updateProductUnit('${escHtml(key)}',this.value)">${UNITES.map(u => `<option ${u===unite?'selected':''}>${u}</option>`).join('')}</select>
+        </div>
+        <button class="btn-ghost del-btn" onclick="confirmDeleteProduct('${escHtml(rayon.nom)}','${escHtml(article)}')">🗑️</button>
+      </div>`;
+    }
+    html += '</div></div>';
+  }
+  container.innerHTML = html;
+  const sel = document.getElementById('new-product-rayon');
+  if (!sel.options.length) {
+    for (const r of catalogue) sel.add(new Option(r.nom, r.nom));
+  }
+}
+
+function toggleProduct(key, rayon, article, checked) {
+  if (checked) selectedProducts[key] = {nom: article, rayon, quantite: 1, unite: 'pièce'};
+  else delete selectedProducts[key];
+  persist();
+  renderProduits();
+}
+function updateProductQty(key, val) {
+  if (selectedProducts[key]) { selectedProducts[key].quantite = Math.max(1, parseInt(val)||1); persist(); }
+}
+function updateProductUnit(key, val) {
+  if (selectedProducts[key]) { selectedProducts[key].unite = val; persist(); }
+}
+
+function addProduct() {
+  const name = document.getElementById('new-product-name').value.trim();
+  const rayon = document.getElementById('new-product-rayon').value;
+  if (!name) return;
+  const r = catalogue.find(r => r.nom === rayon);
+  if (!r) return;
+  if (r.articles.some(a => a.toLowerCase() === name.toLowerCase())) { alert(`"${name}" existe déjà dans ${rayon}`); return; }
+  r.articles.push(name);
+  r.articles.sort((a,b) => a.localeCompare(b, 'fr'));
+  persist();
+  document.getElementById('new-product-name').value = '';
+  renderProduits();
+}
+
+function confirmDeleteProduct(rayon, article) {
+  showModal('Supprimer un produit', `Supprimer « ${article} » du rayon ${rayon} ?`, () => {
+    const r = catalogue.find(r => r.nom === rayon);
+    if (r) { r.articles = r.articles.filter(a => a !== article); persist(); renderProduits(); }
+  });
+}
+
+document.getElementById('search-produits').addEventListener('input', renderProduits);
+
+// =====================
+// TAB: MON STOCK
+// =====================
+const openStockRayons = new Set();
+
+function toggleStockRayon(nom) {
+  if (openStockRayons.has(nom)) openStockRayons.delete(nom);
+  else openStockRayons.add(nom);
+  const hdr = document.querySelector(`[data-stock-rayon="${CSS.escape(nom)}"]`);
+  if (hdr) { hdr.classList.toggle('open'); hdr.nextElementSibling.classList.toggle('open'); }
+}
+
+function renderStock() {
+  const q = (document.getElementById('search-stock').value || '').toLowerCase().trim();
+  const container = document.getElementById('stock-list');
+  let html = '';
+  for (const rayon of catalogue) {
+    const matching = rayon.articles.filter(a => !q || a.toLowerCase().includes(q));
+    if (!matching.length) continue;
+    const isOpen = q || openStockRayons.has(rayon.nom);
+    const open = isOpen ? 'open' : '';
+    html += `<div class="card">
+      <div class="card-header ${open}" data-stock-rayon="${escHtml(rayon.nom)}" onclick="toggleStockRayon('${escHtml(rayon.nom)}')">
+        <span>${escHtml(rayon.nom)}</span>
+        <span><span class="count">${matching.length}</span> <span class="arrow">▶</span></span>
+      </div>
+      <div class="card-body ${open}">`;
+    for (const article of matching) {
+      const key = `stock_${rayon.nom}||${article}`;
+      const sel = stockProducts[key];
+      const checked = sel ? 'checked' : '';
+      const qty = sel ? sel.quantite : 1;
+      const unite = sel ? sel.unite : 'pièce';
+      const showQty = sel ? '' : 'hidden';
+      html += `<div class="item-row">
+        <label><input type="checkbox" ${checked} onchange="toggleStock('${escHtml(key)}','${escHtml(rayon.nom)}','${escHtml(article)}',this.checked)"><span>${escHtml(article)}</span></label>
+        <div class="qty-unit ${showQty}">
+          <input type="number" class="input-sm" min="1" value="${qty}" onchange="updateStockQty('${escHtml(key)}',this.value)">
+          <select class="input-sm" onchange="updateStockUnit('${escHtml(key)}',this.value)">${UNITES.map(u => `<option ${u===unite?'selected':''}>${u}</option>`).join('')}</select>
+        </div>
+      </div>`;
+    }
+    html += '</div></div>';
+  }
+  container.innerHTML = html;
+}
+
+function toggleStock(key, rayon, article, checked) {
+  if (checked) stockProducts[key] = {nom: article, rayon, quantite: 1, unite: 'pièce'};
+  else delete stockProducts[key];
+  persist();
+  renderStock();
+}
+function updateStockQty(key, val) {
+  if (stockProducts[key]) { stockProducts[key].quantite = Math.max(1, parseInt(val)||1); persist(); }
+}
+function updateStockUnit(key, val) {
+  if (stockProducts[key]) { stockProducts[key].unite = val; persist(); }
+}
+document.getElementById('search-stock').addEventListener('input', renderStock);
+
+// =====================
+// TAB: MA LISTE
+// =====================
+function renderListe() {
+  const finalList = buildFinalList();
+  const container = document.getElementById('liste-content');
+  const rayons = Object.keys(finalList);
+  if (!rayons.length) {
+    container.innerHTML = '<div class="empty-state"><div class="icon">🛒</div><p>Sélectionnez des recettes ou ajoutez des produits pour constituer votre liste.</p></div>';
+    return;
+  }
+
+  const selNames = recettes.filter(r => selectedRecipes[r.nom]).map(r => r.nom);
+  let total = 0, checked = 0;
+  for (const r in finalList) for (const it of finalList[r]) {
+    total++;
+    if (checkedListItems[`${r}||${it.nom}`]) checked++;
+  }
+
+  let html = '<div class="section-title">Ma liste de courses</div>';
+  if (selNames.length) html += `<div class="plats-badge">🍽️ ${selNames.join(' • ')}</div>`;
+  const pct = total > 0 ? Math.round(checked / total * 100) : 0;
+  html += `<div class="progress-container"><div class="progress-info"><span class="progress-label">Progression</span><span class="progress-count">${checked}/${total}</span></div><div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div></div>`;
+
+  for (const rayon of rayons) {
+    html += `<div class="rayon-label">${escHtml(rayon)}</div><div class="card">`;
+    for (const it of finalList[rayon]) {
+      const ck = `${rayon}||${it.nom}`;
+      const isChecked = checkedListItems[ck];
+      html += `<div class="list-item ${isChecked?'checked':''}">
+        <input type="checkbox" class="check-success" ${isChecked?'checked':''} onchange="toggleListItem('${escHtml(ck)}',this.checked)">
+        <span class="list-item-text">${escHtml(formatItem(it.nom, it.quantite, it.unite))}</span>
+      </div>`;
+    }
+    html += '</div>';
+  }
+
+  html += `<div class="actions-bar"><button class="btn btn-outline btn-sm" onclick="resetAll()">🗑️ Tout réinitialiser</button></div>`;
+  container.innerHTML = html;
+}
+
+function toggleListItem(key, checked) {
+  if (checked) checkedListItems[key] = true;
+  else delete checkedListItems[key];
+  persist();
+  renderListe();
+}
+
+function resetAll() {
+  showModal('Tout réinitialiser', 'Vider toutes les sélections (recettes, produits, stock et liste) ?', () => {
+    selectedRecipes = {};
+    selectedProducts = {};
+    stockProducts = {};
+    checkedListItems = {};
+    persist();
+    renderRecettes();
+    renderProduits();
+    renderStock();
+    renderListe();
+  });
+}
+
+// =====================
+// TAB: GÉRER
+// =====================
+function renderGerer() {
+  const sel = document.getElementById('recipe-selector');
+  const current = sel.value;
+  sel.innerHTML = '<option value="__new__">-- Nouvelle recette --</option>';
+  for (const r of [...recettes].sort((a,b) => a.nom.localeCompare(b.nom,'fr'))) {
+    sel.add(new Option(r.nom, r.nom));
+  }
+  if (current && [...sel.options].some(o => o.value === current)) sel.value = current;
+  const ingRayon = document.getElementById('ing-rayon');
+  ingRayon.innerHTML = '';
+  for (const r of catalogue) ingRayon.add(new Option(r.nom, r.nom));
+  loadRecipeEditor();
+}
+
+function loadRecipeEditor() {
+  const sel = document.getElementById('recipe-selector');
+  const nameInput = document.getElementById('recipe-name');
+  const delBtn = document.getElementById('delete-recipe-btn');
+  if (sel.value === '__new__') {
+    nameInput.value = '';
+    editIngredients = [];
+    delBtn.style.display = 'none';
+  } else {
+    const r = recettes.find(r => r.nom === sel.value);
+    if (r) {
+      nameInput.value = r.nom;
+      editIngredients = r.ingredients.map(i => ({...i, quantite: i.quantite||1, unite: i.unite||'pièce'}));
+      delBtn.style.display = '';
+    }
+  }
+  renderEditIngredients();
+}
+
+function renderEditIngredients() {
+  const container = document.getElementById('edit-ingredients');
+  if (!editIngredients.length) { container.innerHTML = '<p class="section-subtitle">Ajoutez des ingrédients via le formulaire ci-dessus.</p>'; return; }
+  container.innerHTML = editIngredients.map((ing, i) =>
+    `<div class="edit-ing-item">
+      <span><strong>${escHtml(formatItem(ing.nom, ing.quantite, ing.unite))}</strong> — <em>${escHtml(ing.rayon)}</em></span>
+      <button class="btn-ghost" onclick="removeIngredient(${i})">🗑️</button>
+    </div>`
+  ).join('');
+}
+
+function addIngredient() {
+  const nom = document.getElementById('ing-name').value.trim();
+  if (!nom) return;
+  editIngredients.push({
+    nom,
+    rayon: document.getElementById('ing-rayon').value,
+    quantite: Math.max(1, parseInt(document.getElementById('ing-qty').value)||1),
+    unite: document.getElementById('ing-unite').value
+  });
+  document.getElementById('ing-name').value = '';
+  document.getElementById('ing-qty').value = '1';
+  document.getElementById('ing-unite').value = 'pièce';
+  renderEditIngredients();
+}
+
+function removeIngredient(idx) {
+  editIngredients.splice(idx, 1);
+  renderEditIngredients();
+}
+
+function saveRecipe() {
+  const name = document.getElementById('recipe-name').value.trim();
+  if (!name) { alert('Donnez un nom à la recette.'); return; }
+  if (!editIngredients.length) { alert('Ajoutez au moins un ingrédient.'); return; }
+  const sel = document.getElementById('recipe-selector');
+  const isEditing = sel.value !== '__new__';
+
+  if (isEditing) {
+    const existing = recettes.find(r => r.nom === sel.value);
+    if (existing) {
+      if (name.toLowerCase() !== sel.value.toLowerCase() && recettes.some(r => r.nom.toLowerCase() === name.toLowerCase())) {
+        alert(`La recette "${name}" existe déjà.`); return;
+      }
+      if (selectedRecipes[existing.nom]) {
+        delete selectedRecipes[existing.nom];
+        selectedRecipes[name] = true;
+      }
+      existing.nom = name;
+      existing.ingredients = [...editIngredients];
+    }
+  } else {
+    if (recettes.some(r => r.nom.toLowerCase() === name.toLowerCase())) {
+      alert(`La recette "${name}" existe déjà.`); return;
+    }
+    recettes.push({nom: name, ingredients: [...editIngredients]});
+  }
+  for (const ing of editIngredients) {
+    const r = catalogue.find(r => r.nom === ing.rayon);
+    if (r && !r.articles.some(a => a.toLowerCase() === ing.nom.toLowerCase())) {
+      r.articles.push(ing.nom);
+      r.articles.sort((a,b) => a.localeCompare(b,'fr'));
+    }
+  }
+  persist();
+  alert(`Recette « ${name} » ${isEditing ? 'mise à jour' : 'enregistrée'} !`);
+  sel.value = name;
+  renderGerer();
+}
+
+function deleteRecipe() {
+  const sel = document.getElementById('recipe-selector');
+  const name = sel.value;
+  if (name === '__new__') return;
+  showModal('Supprimer la recette', `Supprimer définitivement « ${name} » ?`, () => {
+    recettes = recettes.filter(r => r.nom !== name);
+    delete selectedRecipes[name];
+    persist();
+    sel.value = '__new__';
+    renderGerer();
+  });
+}
+
+// =====================
+// MODAL
+// =====================
+let modalCallback = null;
+function showModal(title, text, onConfirm) {
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('modal-text').textContent = text;
+  document.getElementById('modal').classList.add('open');
+  modalCallback = onConfirm;
+}
+function closeModal() { document.getElementById('modal').classList.remove('open'); modalCallback = null; }
+document.getElementById('modal-confirm').addEventListener('click', () => {
+  if (modalCallback) modalCallback();
+  closeModal();
+});
+document.getElementById('modal').addEventListener('click', (e) => { if (e.target === e.currentTarget) closeModal(); });
+
+// =====================
+// INIT
+// =====================
+renderRecettes();
+renderProduits();
+renderStock();
+
+// Register Service Worker for offline support
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').catch(() => {});
+}
+</script>
+</body>
+</html>
